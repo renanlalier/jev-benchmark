@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import csv
 import json
+import logging
 import math
 import statistics
 from collections import Counter, defaultdict
@@ -10,6 +11,8 @@ from pathlib import Path
 
 from jev_benchmark.models import BenchmarkCase, Intent, ProviderResult, Sentiment
 from jev_benchmark.providers.base import BenchmarkProvider
+
+LOGGER = logging.getLogger(__name__)
 
 
 def load_cases(path: str | Path) -> list[BenchmarkCase]:
@@ -25,6 +28,7 @@ def load_cases(path: str | Path) -> list[BenchmarkCase]:
                     expected_escalation=row["expected_escalation"].strip().lower() == "true",
                 )
             )
+    LOGGER.info("Loaded %d case(s) from %s", len(rows), path)
     return rows
 
 
@@ -34,10 +38,13 @@ async def run_provider(
     repetitions: int,
 ) -> list[tuple[BenchmarkCase, ProviderResult]]:
     output: list[tuple[BenchmarkCase, ProviderResult]] = []
+    total = len(cases) * repetitions
+    LOGGER.info("[%s] Starting %d classification(s)", provider.name, total)
     for _ in range(repetitions):
         for case in cases:
             result = await provider.classify(case)
             output.append((case, result))
+    LOGGER.info("[%s] Completed %d classification(s)", provider.name, len(output))
     return output
 
 
@@ -46,6 +53,7 @@ async def run_all(
     cases: list[BenchmarkCase],
     repetitions: int,
 ) -> dict[str, list[tuple[BenchmarkCase, ProviderResult]]]:
+    LOGGER.info("Running %d provider(s) concurrently", len(providers))
     results = await asyncio.gather(
         *(run_provider(provider, cases, repetitions) for provider in providers)
     )
@@ -121,6 +129,55 @@ def write_results(
     path = Path(output_dir)
     path.mkdir(parents=True, exist_ok=True)
     summary = {name: summarize(records) for name, records in results.items()}
+    LOGGER.info("Writing summary for %d provider(s)", len(summary))
+    prediction_path = path / "predictions.csv"
+    fieldnames = [
+        "provider",
+        "model",
+        "case_id",
+        "text",
+        "expected_intent",
+        "expected_sentiment",
+        "expected_escalation",
+        "predicted_intent",
+        "predicted_sentiment",
+        "predicted_escalation",
+        "intent_confidence",
+        "sentiment_confidence",
+        "escalation_confidence",
+        "latency_ms",
+        "input_tokens",
+        "output_tokens",
+        "estimated_cost_usd",
+    ]
+    with prediction_path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        for records in results.values():
+            for case, result in records:
+                prediction = result.prediction
+                writer.writerow(
+                    {
+                        "provider": result.provider,
+                        "model": result.model,
+                        "case_id": case.id,
+                        "text": case.text,
+                        "expected_intent": case.expected_intent.value,
+                        "expected_sentiment": case.expected_sentiment.value,
+                        "expected_escalation": case.expected_escalation,
+                        "predicted_intent": prediction.intent.value,
+                        "predicted_sentiment": prediction.sentiment.value,
+                        "predicted_escalation": prediction.escalation,
+                        "intent_confidence": prediction.intent_confidence,
+                        "sentiment_confidence": prediction.sentiment_confidence,
+                        "escalation_confidence": prediction.escalation_confidence,
+                        "latency_ms": result.latency_ms,
+                        "input_tokens": result.input_tokens,
+                        "output_tokens": result.output_tokens,
+                        "estimated_cost_usd": result.estimated_cost_usd,
+                    }
+                )
+    LOGGER.info("Predictions written: %s", prediction_path)
     summary_path = path / "summary.json"
     summary_path.write_text(json.dumps(summary, indent=2, default=str), encoding="utf-8")
     return summary_path

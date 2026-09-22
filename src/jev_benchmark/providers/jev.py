@@ -12,42 +12,42 @@ from jev_benchmark.providers.base import BenchmarkProvider
 
 class JevProvider(BenchmarkProvider):
     name = "jev"
-    model = "system-one"
+    model = "jev-latest"
     endpoint = "https://api.typesafe.ai/v1/systemone"
 
     async def classify(self, case: BenchmarkCase) -> ProviderResult:
         api_key = os.environ["JEV_API_KEY"]
         payload = {
-            "state": {
-                "user_message": case.text,
-                "task": "Classify user intent, sentiment, and whether escalation is needed.",
-            },
+            "model": self.model,
+            "state": case.text,
             "questions": {
                 "intent": {
                     "type": "choice",
-                    "options": [
-                        "FINANCIAL_TRANSACTION",
-                        "SHOPPING_LIST",
-                        "REMINDER",
-                        "CALENDAR",
-                        "WEATHER",
-                        "GENERAL_CHAT",
-                        "OTHER",
-                    ],
+                    "instructions": "Classify the user intent.",
+                    "criteria": {
+                        "FINANCIAL_TRANSACTION": "A financial transaction or payment.",
+                        "SHOPPING_LIST": "An item to add to a shopping list.",
+                        "REMINDER": "A reminder request.",
+                        "CALENDAR": "A calendar or scheduling request.",
+                        "WEATHER": "A weather request.",
+                        "GENERAL_CHAT": "General conversation.",
+                        "OTHER": "Anything not covered by the other labels.",
+                    },
                 },
                 "sentiment": {
                     "type": "choice",
-                    "options": [
-                        "SATISFIED",
-                        "NEUTRAL",
-                        "CONFUSED",
-                        "FRUSTRATED",
-                        "ANGRY",
-                    ],
+                    "instructions": "Classify the user sentiment.",
+                    "criteria": {
+                        "SATISFIED": "Positive or satisfied.",
+                        "NEUTRAL": "Neutral or factual.",
+                        "CONFUSED": "Confused or uncertain.",
+                        "FRUSTRATED": "Frustrated by a problem.",
+                        "ANGRY": "Angry or highly negative.",
+                    },
                 },
                 "escalation": {
                     "type": "noul",
-                    "question": "Does this message require escalation to a human?",
+                    "instructions": "Does this message require escalation to a human?",
                 },
             },
         }
@@ -85,7 +85,7 @@ class JevProvider(BenchmarkProvider):
             else sentiment
         )
         escalation_value = (
-            escalation.get("probability", escalation.get("p_true"))
+            escalation.get("noul", escalation.get("probability", escalation.get("p_true")))
             if isinstance(escalation, dict)
             else escalation
         )

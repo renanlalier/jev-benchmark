@@ -1,3 +1,4 @@
+import csv
 import json
 
 import pytest
@@ -56,11 +57,22 @@ def test_load_cases_and_write_results(tmp_path) -> None:
     )
 
     cases = load_cases(dataset)
-    output = write_results({}, tmp_path / "results")
+    result = ProviderResult(
+        provider="test",
+        model="m",
+        prediction=Prediction(intent="GENERAL_CHAT", sentiment="NEUTRAL", escalation=True),
+        latency_ms=12,
+    )
+    output = write_results({"test": [(cases[0], result)]}, tmp_path / "results")
+    predictions = output.parent / "predictions.csv"
 
     assert cases[0].expected_escalation is True
     assert output.exists()
-    assert json.loads(output.read_text(encoding="utf-8")) == {}
+    assert json.loads(output.read_text(encoding="utf-8"))["test"]["samples"] == 1
+    with predictions.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    assert rows[0]["case_id"] == "1"
+    assert rows[0]["predicted_escalation"] == "True"
 
 
 @pytest.mark.asyncio

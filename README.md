@@ -50,10 +50,11 @@ Every benchmark run writes machine-readable results plus a Markdown report:
 
 ```text
 results/
-└── <run-id>/
-    ├── predictions.csv
-    ├── summary.json
-    └── report.md
+└── <task>/
+    └── latest/
+        ├── predictions.csv
+        ├── summary.json
+        └── report.md
 ```
 
 Open `report.md` directly on GitHub to inspect the benchmark without downloading a dashboard or running a notebook.
@@ -92,19 +93,19 @@ cp .env.example .env
 Add only the API keys for the providers you want to benchmark.
 
 ```bash
-jev-bench run --providers jev anthropic openai
+jev-bench run
 ```
 
 Run a single provider:
 
 ```bash
-jev-bench run --providers jev
+jev-bench run --provider jev
 ```
 
 Measure run-to-run consistency:
 
 ```bash
-jev-bench run --providers jev anthropic openai --repetitions 10
+jev-bench run --repetitions 10
 ```
 
 For contributors:

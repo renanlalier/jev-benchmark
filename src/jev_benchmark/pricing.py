@@ -16,6 +16,7 @@ PRICING: dict[tuple[str, str], TokenPricing] = {
     ("openai", "gpt-5.6-luna"): TokenPricing(0.20, 1.20),
     ("anthropic", "claude-haiku-4-5-20251001"): TokenPricing(1.00, 5.00),
     ("jev", "system-one"): TokenPricing(0.042, 0.0),
+    ("jev", "jev-latest"): TokenPricing(0.042, 0.0),
 }
 
 
