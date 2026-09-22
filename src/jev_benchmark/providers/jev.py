@@ -88,7 +88,9 @@ class JevProvider(BenchmarkProvider):
                 sentiment_confidence=_confidence(sentiment),
                 escalation_confidence=float(escalation_prob),
             ),
-            latency_ms=latency_ms,\n            input_tokens=input_tokens,\n            output_tokens=output_tokens,\n            estimated_cost_usd=estimate_cost_usd(\n                self.name, self.model, input_tokens, output_tokens\n            ),
+            latency_ms=latency_ms,\n            input_tokens=input_tokens,\n            output_tokens=output_tokens,\n            estimated_cost_usd=estimate_cost_usd(
+                self.name, self.model, input_tokens, output_tokens
+            ),
             raw_output=data,
         )
 
