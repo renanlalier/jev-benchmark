@@ -1,0 +1,14 @@
+{
+  "run_id": "20260922T135538Z",
+  "timestamp_utc": "2026-09-22T13:57:10.784344+00:00",
+  "task": "customer-support",
+  "dataset": "datasets/customer_support_triage.csv",
+  "dataset_sha256": "20c7dae5a38a7a3988fb036b00216f54dcd62606d2bd5dc1e9f95ad27a8c0238",
+  "providers": [
+    "jev",
+    "anthropic",
+    "openai"
+  ],
+  "repetitions": 1,
+  "git_commit": "bf32fb4a1e7be09db2192a82017bc2780c0071d8"
+}
