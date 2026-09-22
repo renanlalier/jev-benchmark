@@ -1,0 +1,73 @@
+from __future__ import annotations
+
+import json
+import os
+import time
+import httpx
+
+from jev_benchmark.models import BenchmarkCase, Prediction, ProviderResult
+from jev_benchmark.providers.base import BenchmarkProvider
+
+
+SYSTEM_PROMPT = """You are a strict classifier. Return JSON only with keys: intent, sentiment, escalation.
+Intent must be one of FINANCIAL_TRANSACTION, SHOPPING_LIST, REMINDER, CALENDAR, WEATHER, GENERAL_CHAT, OTHER.
+Sentiment must be one of SATISFIED, NEUTRAL, CONFUSED, FRUSTRATED, ANGRY.
+Escalation must be true or false. Do not explain."""
+
+
+class AnthropicProvider(BenchmarkProvider):
+    name = "anthropic"
+
+    def __init__(self, model: str = "claude-haiku-4-5-20251001") -> None:
+        self.model = model
+
+    async def classify(self, case: BenchmarkCase) -> ProviderResult:
+        api_key = os.environ["ANTHROPIC_API_KEY"]
+        payload = {
+            "model": self.model,
+            "max_tokens": 120,
+            "system": SYSTEM_PROMPT,
+            "messages": [{"role": "user", "content": case.text}],
+        }
+
+        started = time.perf_counter()
+        async with httpx.AsyncClient(timeout=60) as client:
+            response = await client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": api_key,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json=payload,
+            )
+        latency_ms = (time.perf_counter() - started) * 1000
+        response.raise_for_status()
+        data = response.json()
+        text = "".join(
+            part.get("text", "") for part in data.get("content", []) if part.get("type") == "text"
+        ).strip()
+        parsed = json.loads(_strip_code_fence(text))
+        usage = data.get("usage", {})
+
+        return ProviderResult(
+            provider=self.name,
+            model=self.model,
+            prediction=Prediction(**parsed),
+            latency_ms=latency_ms,
+            input_tokens=usage.get("input_tokens"),
+            output_tokens=usage.get("output_tokens"),
+            estimated_cost_usd=None,
+            raw_output=data,
+        )
+
+
+def _strip_code_fence(text: str) -> str:
+    if text.startswith("```"):
+        lines = text.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        return "\n".join(lines)
+    return text
