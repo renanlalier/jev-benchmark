@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
+
 from pydantic import BaseModel, Field
 
 
@@ -47,4 +48,4 @@ class ProviderResult(BaseModel):
     input_tokens: int | None = None
     output_tokens: int | None = None
     estimated_cost_usd: float | None = None
-    raw_output: dict | str | None = None
+    raw_output: dict[str, object] | str | None = None

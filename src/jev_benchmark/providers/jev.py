@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import os
 import time
+
 import httpx
 
-from jev_benchmark.models import BenchmarkCase, Prediction, ProviderResult
-from jev_benchmark.providers.base import BenchmarkProvider
+from jev_benchmark.models import BenchmarkCase, Intent, Prediction, ProviderResult, Sentiment
 from jev_benchmark.pricing import estimate_cost_usd
+from jev_benchmark.providers.base import BenchmarkProvider
 
 
 class JevProvider(BenchmarkProvider):
@@ -73,20 +74,31 @@ class JevProvider(BenchmarkProvider):
         sentiment = answers["sentiment"]
         escalation = answers["escalation"]
 
-        intent_label = intent.get("value", intent.get("choice", intent)) if isinstance(intent, dict) else intent
-        sentiment_label = sentiment.get("value", sentiment.get("choice", sentiment)) if isinstance(sentiment, dict) else sentiment
-        escalation_prob = (
+        intent_label = (
+            intent.get("value", intent.get("choice", intent))
+            if isinstance(intent, dict)
+            else intent
+        )
+        sentiment_label = (
+            sentiment.get("value", sentiment.get("choice", sentiment))
+            if isinstance(sentiment, dict)
+            else sentiment
+        )
+        escalation_value = (
             escalation.get("probability", escalation.get("p_true"))
             if isinstance(escalation, dict)
-            else float(escalation)
+            else escalation
         )
+        if not isinstance(escalation_value, (int, float)):
+            raise TypeError("Jev response did not contain a numeric escalation probability")
+        escalation_prob = float(escalation_value)
 
         return ProviderResult(
             provider=self.name,
             model=self.model,
             prediction=Prediction(
-                intent=intent_label,
-                sentiment=sentiment_label,
+                intent=Intent(str(intent_label)),
+                sentiment=Sentiment(str(sentiment_label)),
                 escalation=bool(escalation_prob >= 0.5),
                 intent_confidence=_confidence(intent),
                 sentiment_confidence=_confidence(sentiment),

@@ -3,12 +3,12 @@ from __future__ import annotations
 import json
 import os
 import time
+
 import httpx
 
 from jev_benchmark.models import BenchmarkCase, Prediction, ProviderResult
-from jev_benchmark.providers.base import BenchmarkProvider
 from jev_benchmark.pricing import estimate_cost_usd
-
+from jev_benchmark.providers.base import BenchmarkProvider
 
 SYSTEM_PROMPT = """You are a strict classifier. Return JSON only with keys: intent, sentiment, escalation.
 Intent must be one of FINANCIAL_TRANSACTION, SHOPPING_LIST, REMINDER, CALENDAR, WEATHER, GENERAL_CHAT, OTHER.
@@ -77,11 +77,22 @@ class OpenAIProvider(BenchmarkProvider):
         )
 
 
-def _extract_output_text(data: dict) -> str:
-    if isinstance(data.get("output_text"), str):
-        return data["output_text"]
-    for item in data.get("output", []):
-        for content in item.get("content", []):
+def _extract_output_text(data: dict[str, object]) -> str:
+    output_text = data.get("output_text")
+    if isinstance(output_text, str):
+        return output_text
+    output = data.get("output", [])
+    if not isinstance(output, list):
+        raise TypeError("OpenAI response did not contain output text")
+    for item in output:
+        if not isinstance(item, dict):
+            continue
+        content_blocks = item.get("content", [])
+        if not isinstance(content_blocks, list):
+            continue
+        for content in content_blocks:
+            if not isinstance(content, dict):
+                continue
             text = content.get("text")
             if isinstance(text, str):
                 return text

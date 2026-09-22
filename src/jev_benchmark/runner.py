@@ -8,7 +8,7 @@ import statistics
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from jev_benchmark.models import BenchmarkCase, ProviderResult
+from jev_benchmark.models import BenchmarkCase, Intent, ProviderResult, Sentiment
 from jev_benchmark.providers.base import BenchmarkProvider
 
 
@@ -20,8 +20,8 @@ def load_cases(path: str | Path) -> list[BenchmarkCase]:
                 BenchmarkCase(
                     id=row["id"],
                     text=row["text"],
-                    expected_intent=row["expected_intent"],
-                    expected_sentiment=row["expected_sentiment"],
+                    expected_intent=Intent(row["expected_intent"]),
+                    expected_sentiment=Sentiment(row["expected_sentiment"]),
                     expected_escalation=row["expected_escalation"].strip().lower() == "true",
                 )
             )
@@ -52,7 +52,7 @@ async def run_all(
     return {provider.name: result for provider, result in zip(providers, results, strict=True)}
 
 
-def summarize(records: list[tuple[BenchmarkCase, ProviderResult]]) -> dict:
+def summarize(records: list[tuple[BenchmarkCase, ProviderResult]]) -> dict[str, object]:
     if not records:
         return {}
 
@@ -68,9 +68,7 @@ def summarize(records: list[tuple[BenchmarkCase, ProviderResult]]) -> dict:
         sentiment_hits += int(p.sentiment == case.expected_sentiment)
         escalation_hits += int(p.escalation == case.expected_escalation)
         latencies.append(result.latency_ms)
-        predictions_by_case[case.id].append(
-            f"{p.intent}|{p.sentiment}|{str(p.escalation).lower()}"
-        )
+        predictions_by_case[case.id].append(f"{p.intent}|{p.sentiment}|{str(p.escalation).lower()}")
 
     n = len(records)
     consistency_scores = []
@@ -93,7 +91,8 @@ def summarize(records: list[tuple[BenchmarkCase, ProviderResult]]) -> dict:
             if r.prediction.intent == case.expected_intent
             and r.prediction.sentiment == case.expected_sentiment
             and r.prediction.escalation == case.expected_escalation
-        ) / n,
+        )
+        / n,
         "latency_ms_mean": statistics.mean(latencies),
         "latency_ms_p50": percentile(latencies, 0.50),
         "latency_ms_p95": percentile(latencies, 0.95),

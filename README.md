@@ -23,28 +23,23 @@ Providers are adapters. Adding another model should not require changing the ben
 ## Architecture
 
 ```mermaid
-flowchart LR
-    D[Golden Dataset] --> R[Benchmark Runner]
-
-    R --> J[Jev<br/>System One]
-    R --> A[Claude<br/>Haiku 4.5]
-    R --> O[OpenAI<br/>GPT-5.6 Luna]
-
-    J --> N[Normalized Predictions]
-    A --> N
-    O --> N
-
-    N --> M[Metrics Engine]
-
-    M --> Q[Quality<br/>Accuracy · Macro F1]
-    M --> P[Performance<br/>p50 · p95 · Errors]
-    M --> E[Economics<br/>Cost / Request]
-    M --> C[Consistency<br/>Variance · Calibration]
-
-    Q --> V[Benchmark Report]
-    P --> V
-    E --> V
-    C --> V
+graph LR
+    dataset["Golden dataset"] --> runner["Benchmark runner"]
+    runner --> jev["Jev System One"]
+    runner --> anthropic["Claude Haiku 4.5"]
+    runner --> openai["OpenAI GPT 5.6 Luna"]
+    jev --> predictions["Normalized predictions"]
+    anthropic --> predictions
+    openai --> predictions
+    predictions --> metrics["Metrics engine"]
+    metrics --> quality["Quality metrics"]
+    metrics --> performance["Latency and errors"]
+    metrics --> economics["Cost metrics"]
+    metrics --> consistency["Consistency metrics"]
+    quality --> report["Benchmark report"]
+    performance --> report
+    economics --> report
+    consistency --> report
 ```
 
 GitHub renders Mermaid directly in Markdown, so the architecture stays versioned as text and is visible without external images.
@@ -123,23 +118,23 @@ pytest
 
 ```mermaid
 sequenceDiagram
-    participant U as Benchmark Runner
-    participant D as Golden Dataset
-    participant P as Provider Adapter
-    participant M as Model / Jev
-    participant E as Metrics Engine
-    participant R as GitHub Report
+    participant Runner as Benchmark Runner
+    participant Dataset as Golden Dataset
+    participant Adapter as Provider Adapter
+    participant Model as Model
+    participant Metrics as Metrics Engine
+    participant Report as Benchmark Report
 
-    U->>D: Load labeled cases
-    loop Every case × repetition
-        U->>P: Normalized classification task
-        P->>M: Provider-native request
-        M-->>P: Prediction / probabilities
-        P-->>U: NormalizedPrediction
+    Runner->>Dataset: Load labeled cases
+    loop Each case and repetition
+        Runner->>Adapter: Classification task
+        Adapter->>Model: Provider request
+        Model-->>Adapter: Prediction
+        Adapter-->>Runner: Normalized prediction
     end
-    U->>E: Predictions + ground truth
-    E-->>U: Quality + latency + cost + consistency
-    U->>R: Generate report.md + CSV + JSON
+    Runner->>Metrics: Predictions and ground truth
+    Metrics-->>Runner: Benchmark metrics
+    Runner->>Report: Generate report files
 ```
 
 ## Dataset format

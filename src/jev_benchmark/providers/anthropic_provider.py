@@ -3,12 +3,12 @@ from __future__ import annotations
 import json
 import os
 import time
+
 import httpx
 
 from jev_benchmark.models import BenchmarkCase, Prediction, ProviderResult
-from jev_benchmark.providers.base import BenchmarkProvider
 from jev_benchmark.pricing import estimate_cost_usd
-
+from jev_benchmark.providers.base import BenchmarkProvider
 
 SYSTEM_PROMPT = """You are a strict classifier. Return JSON only with keys: intent, sentiment, escalation.
 Intent must be one of FINANCIAL_TRANSACTION, SHOPPING_LIST, REMINDER, CALENDAR, WEATHER, GENERAL_CHAT, OTHER.
