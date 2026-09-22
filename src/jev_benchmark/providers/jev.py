@@ -6,6 +6,7 @@ import httpx
 
 from jev_benchmark.models import BenchmarkCase, Prediction, ProviderResult
 from jev_benchmark.providers.base import BenchmarkProvider
+from jev_benchmark.pricing import estimate_cost_usd
 
 
 class JevProvider(BenchmarkProvider):
@@ -87,8 +88,7 @@ class JevProvider(BenchmarkProvider):
                 sentiment_confidence=_confidence(sentiment),
                 escalation_confidence=float(escalation_prob),
             ),
-            latency_ms=latency_ms,
-            estimated_cost_usd=None,
+            latency_ms=latency_ms,\n            input_tokens=input_tokens,\n            output_tokens=output_tokens,\n            estimated_cost_usd=estimate_cost_usd(\n                self.name, self.model, input_tokens, output_tokens\n            ),
             raw_output=data,
         )
 
