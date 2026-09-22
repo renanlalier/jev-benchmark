@@ -8,6 +8,7 @@ from jev_benchmark.support_triage import (
     SupportResult,
     _anthropic_tool_input,
     _validated,
+    summarize_support,
     write_support_results,
 )
 
@@ -60,7 +61,15 @@ def test_support_predictions_include_jev_scores(tmp_path) -> None:
         },
         12.0,
         jev_scores={"route": 0.9, "urgency": 0.8, "risk": 0.7, "action": 0.6},
+        input_tokens=1_000,
+        output_tokens=10,
+        estimated_cost_usd=0.123,
     )
+
+    metrics = summarize_support([(case, result)])
+    assert metrics["priced_samples"] == 1
+    assert metrics["estimated_total_cost_usd"] == pytest.approx(0.123)
+    assert metrics["estimated_cost_per_priced_request_usd"] == pytest.approx(0.123)
 
     summary = write_support_results({"jev": [(case, result)]}, tmp_path)
     with (summary.parent / "predictions.csv").open(newline="", encoding="utf-8") as handle:
@@ -70,3 +79,6 @@ def test_support_predictions_include_jev_scores(tmp_path) -> None:
     assert row["jev_urgency_score"] == "0.8"
     assert row["jev_risk_score"] == "0.7"
     assert row["jev_action_score"] == "0.6"
+    assert row["input_tokens"] == "1000"
+    assert row["output_tokens"] == "10"
+    assert row["estimated_cost_usd"] == "0.123"

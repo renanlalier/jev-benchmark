@@ -26,7 +26,7 @@ When two labels remain defensible, rewrite or remove the case. The 2026-09 revie
 
 ## Evaluation
 
-Report accuracy for each field and an exact-match score across all four. The most important error slices are false negatives for `ACCOUNT_TAKEOVER`, `PAYMENT_DISPUTE`, `SAFETY_PRIVACY`, and `CRITICAL` urgency. Those should be reported separately from aggregate accuracy.
+Report accuracy for each field and an exact-match score across all four. The summary also reports `priced_samples`, `estimated_total_cost_usd`, and `estimated_cost_per_priced_request_usd` when provider token usage is available. The most important error slices are false negatives for `ACCOUNT_TAKEOVER`, `PAYMENT_DISPUTE`, `SAFETY_PRIVACY`, and `CRITICAL` urgency. Those should be reported separately from aggregate accuracy.
 
 ## Operational policy
 

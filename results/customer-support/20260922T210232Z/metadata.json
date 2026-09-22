@@ -1,6 +1,6 @@
 {
-  "run_id": "20260922T172208Z",
-  "timestamp_utc": "2026-09-22T17:23:40.662876+00:00",
+  "run_id": "20260922T210232Z",
+  "timestamp_utc": "2026-09-22T21:04:01.932842+00:00",
   "task": "customer-support",
   "dataset": "datasets/customer_support_triage.csv",
   "dataset_sha256": "20c7dae5a38a7a3988fb036b00216f54dcd62606d2bd5dc1e9f95ad27a8c0238",
@@ -10,5 +10,5 @@
     "openai"
   ],
   "repetitions": 1,
-  "git_commit": "0eaac256d9b88bfd02a77e9ed97ad4625f2c54fd"
+  "git_commit": "bf75795ce8308f2b1a07c2bdb448560c324d9873"
 }

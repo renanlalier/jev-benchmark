@@ -13,6 +13,7 @@ from typing import Any
 
 import httpx
 
+from jev_benchmark.pricing import estimate_cost_usd
 from jev_benchmark.providers.jev import extract_jev_score
 from jev_benchmark.providers.openai_provider import _extract_output_text
 from jev_benchmark.task_policies import SUPPORT_TRIAGE_CRITERIA, support_triage_prompt
@@ -36,6 +37,9 @@ class SupportResult:
     latency_ms: float
     error: str | None = None
     jev_scores: dict[str, float | None] | None = None
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    estimated_cost_usd: float | None = None
 
 
 LOGGER = logging.getLogger(__name__)
@@ -120,11 +124,19 @@ async def _openai(case: SupportCase) -> SupportResult:
     response.raise_for_status()
     data: dict[str, Any] = response.json()
     text = _extract_output_text(data)
+    usage = data.get("usage", {})
+    input_tokens = usage.get("input_tokens")
+    output_tokens = usage.get("output_tokens")
     return SupportResult(
         "openai",
         str(payload["model"]),
         _validated(json.loads(text)),
         (time.perf_counter() - started) * 1000,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        estimated_cost_usd=estimate_cost_usd(
+            "openai", str(payload["model"]), input_tokens, output_tokens
+        ),
     )
 
 
@@ -174,11 +186,19 @@ async def _anthropic(case: SupportCase) -> SupportResult:
         )
     response.raise_for_status()
     data: dict[str, Any] = response.json()
+    usage = data.get("usage", {})
+    input_tokens = usage.get("input_tokens")
+    output_tokens = usage.get("output_tokens")
     return SupportResult(
         "anthropic",
         str(payload["model"]),
         _validated(_anthropic_tool_input(data)),
         (time.perf_counter() - started) * 1000,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        estimated_cost_usd=estimate_cost_usd(
+            "anthropic", str(payload["model"]), input_tokens, output_tokens
+        ),
     )
 
 
@@ -203,12 +223,20 @@ async def _jev(case: SupportCase) -> SupportResult:
     data: dict[str, Any] = response.json()
     answers = data["answers"]
     values = {name: str(answers[name]["choice"]) for name in FIELDS}
+    usage = data.get("usage", {})
+    input_tokens = usage.get("input_tokens") or usage.get("input")
+    output_tokens = usage.get("output_tokens") or usage.get("output")
     return SupportResult(
         "jev",
         str(payload["model"]),
         _validated(values),
         (time.perf_counter() - started) * 1000,
         jev_scores={name: extract_jev_score(answers[name]) for name in FIELDS},
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        estimated_cost_usd=estimate_cost_usd(
+            "jev", str(payload["model"]), input_tokens, output_tokens
+        ),
     )
 
 
@@ -279,6 +307,7 @@ def summarize_support(records: list[tuple[SupportCase, SupportResult]]) -> dict[
         for name, attribute in expected.items()
     }
     latencies = [result.latency_ms for _, result in successful]
+    costs = [result.estimated_cost_usd for _, result in successful if result.estimated_cost_usd is not None]
     base.update(
         {
             **{f"{name}_accuracy": score for name, score in accuracy.items()},
@@ -293,6 +322,9 @@ def summarize_support(records: list[tuple[SupportCase, SupportResult]]) -> dict[
             "latency_ms_mean": statistics.mean(latencies),
             "latency_ms_p50": _percentile(latencies, 0.5),
             "latency_ms_p95": _percentile(latencies, 0.95),
+            "priced_samples": len(costs),
+            "estimated_total_cost_usd": sum(costs) if costs else None,
+            "estimated_cost_per_priced_request_usd": statistics.mean(costs) if costs else None,
         }
     )
     return base
@@ -331,6 +363,9 @@ def write_support_results(
         "jev_risk_score",
         "jev_action_score",
         "latency_ms",
+        "input_tokens",
+        "output_tokens",
+        "estimated_cost_usd",
         "error",
     ]
     with prediction_path.open("w", newline="", encoding="utf-8") as handle:
@@ -367,6 +402,9 @@ def write_support_results(
                         if result.jev_scores
                         else None,
                         "latency_ms": result.latency_ms,
+                        "input_tokens": result.input_tokens,
+                        "output_tokens": result.output_tokens,
+                        "estimated_cost_usd": result.estimated_cost_usd,
                         "error": result.error,
                     }
                 )
