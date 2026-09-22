@@ -70,7 +70,9 @@ class OpenAIProvider(BenchmarkProvider):
             latency_ms=latency_ms,
             input_tokens=usage.get("input_tokens"),
             output_tokens=usage.get("output_tokens"),
-            estimated_cost_usd=estimate_cost_usd(\n                self.name, self.model, usage.get("input_tokens"), usage.get("output_tokens")\n            ),
+            estimated_cost_usd=estimate_cost_usd(
+                self.name, self.model, usage.get("input_tokens"), usage.get("output_tokens")
+            ),
             raw_output=data,
         )
 
