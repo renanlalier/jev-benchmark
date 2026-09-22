@@ -174,6 +174,9 @@ def write_results(
         "intent_confidence",
         "sentiment_confidence",
         "escalation_confidence",
+        "jev_intent_score",
+        "jev_sentiment_score",
+        "jev_escalation_score",
         "latency_ms",
         "input_tokens",
         "output_tokens",
@@ -204,6 +207,15 @@ def write_results(
                         else None,
                         "escalation_confidence": prediction.escalation_confidence
                         if prediction
+                        else None,
+                        "jev_intent_score": result.jev_scores.get("intent")
+                        if result.jev_scores
+                        else None,
+                        "jev_sentiment_score": result.jev_scores.get("sentiment")
+                        if result.jev_scores
+                        else None,
+                        "jev_escalation_score": result.jev_scores.get("escalation")
+                        if result.jev_scores
                         else None,
                         "latency_ms": result.latency_ms,
                         "input_tokens": result.input_tokens,

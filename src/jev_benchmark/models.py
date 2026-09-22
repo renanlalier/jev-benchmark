@@ -49,4 +49,5 @@ class ProviderResult(BaseModel):
     input_tokens: int | None = None
     output_tokens: int | None = None
     estimated_cost_usd: float | None = None
+    jev_scores: dict[str, float | None] | None = None
     raw_output: dict[str, object] | str | None = None

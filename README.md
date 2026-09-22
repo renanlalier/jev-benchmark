@@ -57,7 +57,7 @@ results/
         └── summary.json
 ```
 
-`metadata.json` records the task, dataset hash, providers, repetition count, timestamp, and commit. `predictions.csv` contains one row per provider prediction. `summary.json` contains aggregate metrics for each provider.
+`metadata.json` records the task, dataset hash, providers, repetition count, timestamp, and commit. `predictions.csv` contains one row per provider prediction; Jev rows include native per-decision `jev_*_score` columns when the API exposes a score. `summary.json` contains aggregate metrics for each provider.
 
 For stable public releases, curated result files can be committed under `results/published/<version>/`. This keeps benchmark outputs reviewable and version-controlled while raw CI artifacts remain attached to workflow runs.
 

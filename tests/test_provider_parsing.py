@@ -1,7 +1,7 @@
 import pytest
 
 from jev_benchmark.providers.anthropic_provider import _strip_code_fence
-from jev_benchmark.providers.jev import _confidence
+from jev_benchmark.providers.jev import _confidence, extract_jev_score
 from jev_benchmark.providers.openai_provider import _extract_output_text
 
 
@@ -20,4 +20,6 @@ def test_anthropic_code_fence_and_jev_confidence_parsing() -> None:
     assert _strip_code_fence('{"intent": "OTHER"}') == '{"intent": "OTHER"}'
     assert _confidence({"confidence": 0.8}) == 0.8
     assert _confidence({"probability": 0.7}) == 0.7
+    assert extract_jev_score({"score": 0.9}) == 0.9
+    assert extract_jev_score(0.6) == 0.6
     assert _confidence("OTHER") is None

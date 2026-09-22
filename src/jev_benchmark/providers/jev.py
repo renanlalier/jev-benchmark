@@ -114,15 +114,26 @@ class JevProvider(BenchmarkProvider):
             estimated_cost_usd=estimate_cost_usd(
                 self.name, self.model, input_tokens, output_tokens
             ),
+            jev_scores={
+                "intent": extract_jev_score(intent),
+                "sentiment": extract_jev_score(sentiment),
+                "escalation": extract_jev_score(escalation),
+            },
             raw_output=data,
         )
 
 
-def _confidence(value: object) -> float | None:
+def extract_jev_score(value: object) -> float | None:
+    if isinstance(value, (int, float)):
+        return float(value)
     if not isinstance(value, dict):
         return None
-    for key in ("confidence", "probability", "prob"):
+    for key in ("score", "confidence", "probability", "prob", "noul", "p_true"):
         candidate = value.get(key)
         if isinstance(candidate, (int, float)):
             return float(candidate)
     return None
+
+
+def _confidence(value: object) -> float | None:
+    return extract_jev_score(value)

@@ -13,6 +13,7 @@ from typing import Any
 
 import httpx
 
+from jev_benchmark.providers.jev import extract_jev_score
 from jev_benchmark.providers.openai_provider import _extract_output_text
 from jev_benchmark.task_policies import SUPPORT_TRIAGE_CRITERIA, support_triage_prompt
 
@@ -34,6 +35,7 @@ class SupportResult:
     values: dict[str, str] | None
     latency_ms: float
     error: str | None = None
+    jev_scores: dict[str, float | None] | None = None
 
 
 LOGGER = logging.getLogger(__name__)
@@ -202,7 +204,11 @@ async def _jev(case: SupportCase) -> SupportResult:
     answers = data["answers"]
     values = {name: str(answers[name]["choice"]) for name in FIELDS}
     return SupportResult(
-        "jev", str(payload["model"]), _validated(values), (time.perf_counter() - started) * 1000
+        "jev",
+        str(payload["model"]),
+        _validated(values),
+        (time.perf_counter() - started) * 1000,
+        jev_scores={name: extract_jev_score(answers[name]) for name in FIELDS},
     )
 
 
@@ -320,6 +326,10 @@ def write_support_results(
         "predicted_urgency",
         "predicted_risk",
         "predicted_action",
+        "jev_route_score",
+        "jev_urgency_score",
+        "jev_risk_score",
+        "jev_action_score",
         "latency_ms",
         "error",
     ]
@@ -344,6 +354,18 @@ def write_support_results(
                         else None,
                         "predicted_risk": result.values.get("risk") if result.values else None,
                         "predicted_action": result.values.get("action") if result.values else None,
+                        "jev_route_score": result.jev_scores.get("route")
+                        if result.jev_scores
+                        else None,
+                        "jev_urgency_score": result.jev_scores.get("urgency")
+                        if result.jev_scores
+                        else None,
+                        "jev_risk_score": result.jev_scores.get("risk")
+                        if result.jev_scores
+                        else None,
+                        "jev_action_score": result.jev_scores.get("action")
+                        if result.jev_scores
+                        else None,
                         "latency_ms": result.latency_ms,
                         "error": result.error,
                     }

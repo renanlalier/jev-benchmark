@@ -62,6 +62,7 @@ def test_load_cases_and_write_results(tmp_path) -> None:
         model="m",
         prediction=Prediction(intent="GENERAL_CHAT", sentiment="NEUTRAL", escalation=True),
         latency_ms=12,
+        jev_scores={"intent": 0.9, "sentiment": 0.8, "escalation": 0.7},
     )
     output = write_results({"test": [(cases[0], result)]}, tmp_path / "results")
     predictions = output.parent / "predictions.csv"
@@ -73,6 +74,9 @@ def test_load_cases_and_write_results(tmp_path) -> None:
         rows = list(csv.DictReader(handle))
     assert rows[0]["case_id"] == "1"
     assert rows[0]["predicted_escalation"] == "True"
+    assert rows[0]["jev_intent_score"] == "0.9"
+    assert rows[0]["jev_sentiment_score"] == "0.8"
+    assert rows[0]["jev_escalation_score"] == "0.7"
 
 
 @pytest.mark.asyncio

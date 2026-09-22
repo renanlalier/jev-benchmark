@@ -47,6 +47,9 @@ The benchmark will evolve beyond simple accuracy. The intended metric set is:
 - Total and per-request estimated cost
 - Run-to-run consistency
 - Confidence calibration when probabilities are natively available
+- Jev-native per-decision scores, persisted as `jev_*_score` in every predictions CSV when returned by the API
+
+The harness does not synthesize Jev scores. A missing native score is written as an empty value, so absence is distinguishable from a low score.
 
 ## Confidence caveat
 
