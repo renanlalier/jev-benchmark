@@ -1,0 +1,11 @@
+id,text,expected_intent,expected_sentiment,expected_escalation
+1,"I spent 50 dollars at the supermarket",FINANCIAL_TRANSACTION,NEUTRAL,false
+2,"Add rice and milk to my shopping list",SHOPPING_LIST,NEUTRAL,false
+3,"Remind me tomorrow at 9 to call the doctor",REMINDER,NEUTRAL,false
+4,"Schedule a meeting with Ana for Friday afternoon",CALENDAR,NEUTRAL,false
+5,"What is the weather forecast for tomorrow?",WEATHER,NEUTRAL,false
+6,"Thanks, that worked perfectly",GENERAL_CHAT,SATISFIED,false
+7,"I don't understand what I need to do now",GENERAL_CHAT,CONFUSED,false
+8,"This is the third time this failed",GENERAL_CHAT,FRUSTRATED,true
+9,"This is unacceptable, I want to speak to someone now",GENERAL_CHAT,ANGRY,true
+10,"Can you help me with something?",OTHER,NEUTRAL,false
