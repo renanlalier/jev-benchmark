@@ -1,51 +1,51 @@
 id,text,expected_route,expected_urgency,expected_risk,expected_action
-1,I was charged twice for my monthly plan,BILLING,HIGH,PAYMENT_DISPUTE,HUMAN_ESCALATION
-2,Why is there an extra fee on my invoice?,BILLING,NORMAL,NONE,AUTO_REPLY
-3,My refund has not arrived after ten days,BILLING,HIGH,PAYMENT_DISPUTE,HUMAN_ESCALATION
+1,I was charged twice today and need the duplicate reversed before my payment is due tomorrow,BILLING,HIGH,PAYMENT_DISPUTE,HUMAN_ESCALATION
+2,Can you explain the standard service fee listed on my invoice?,BILLING,LOW,NONE,AUTO_REPLY
+3,"My refund was promised within ten days; that deadline passed, and I already provided my order details",BILLING,HIGH,PAYMENT_DISPUTE,HUMAN_ESCALATION
 4,Can I get a copy of last month's receipt?,BILLING,LOW,NONE,AUTO_REPLY
-5,The price shown at checkout changed,BILLING,NORMAL,NONE,REQUEST_INFORMATION
-6,I need to update the credit card on my account,BILLING,LOW,NONE,AUTO_REPLY
-7,My payment was declined but my bank says it worked,BILLING,HIGH,PAYMENT_DISPUTE,HUMAN_ESCALATION
-8,Please explain this annual renewal charge,BILLING,NORMAL,NONE,AUTO_REPLY
-9,I was promised a discount and it was not applied,BILLING,NORMAL,NONE,REQUEST_INFORMATION
+5,"Before I pay, the price at checkout differs from the pricing page",BILLING,HIGH,NONE,REQUEST_INFORMATION
+6,I need to update the credit card on my account,BILLING,NORMAL,NONE,AUTO_REPLY
+7,My bank confirms the funds were debited but my payment is still declined,BILLING,HIGH,PAYMENT_DISPUTE,HUMAN_ESCALATION
+8,Please explain this annual renewal charge,BILLING,LOW,NONE,AUTO_REPLY
+9,The advertised discount was not applied before I completed checkout,BILLING,HIGH,NONE,REQUEST_INFORMATION
 10,I want to dispute every charge from this company,BILLING,HIGH,PAYMENT_DISPUTE,HUMAN_ESCALATION
-11,The dashboard returns an error whenever I save,TECHNICAL_SUPPORT,NORMAL,NONE,REQUEST_INFORMATION
+11,The dashboard returns an error whenever I save,TECHNICAL_SUPPORT,HIGH,NONE,REQUEST_INFORMATION
 12,Our production integration has been down for an hour,TECHNICAL_SUPPORT,CRITICAL,NONE,PRIORITY_QUEUE
-13,The mobile app crashes immediately after opening,TECHNICAL_SUPPORT,HIGH,NONE,PRIORITY_QUEUE
+13,The mobile app crashes immediately after opening and blocks our field team from working,TECHNICAL_SUPPORT,CRITICAL,NONE,PRIORITY_QUEUE
 14,Where can I find the API documentation?,TECHNICAL_SUPPORT,LOW,NONE,AUTO_REPLY
 15,The export file is blank,TECHNICAL_SUPPORT,NORMAL,NONE,REQUEST_INFORMATION
 16,Your service is timing out for all of our users,TECHNICAL_SUPPORT,CRITICAL,NONE,PRIORITY_QUEUE
 17,I cannot connect my webhook,TECHNICAL_SUPPORT,NORMAL,NONE,REQUEST_INFORMATION
 18,Does your app support dark mode?,TECHNICAL_SUPPORT,LOW,NONE,AUTO_REPLY
-19,A recent update broke our reporting workflow,TECHNICAL_SUPPORT,HIGH,NONE,PRIORITY_QUEUE
-20,The search page shows results from the wrong account,TECHNICAL_SUPPORT,HIGH,SAFETY_PRIVACY,HUMAN_ESCALATION
-21,I forgot my password,ACCOUNT_ACCESS,LOW,NONE,AUTO_REPLY
-22,The verification email never arrives,ACCOUNT_ACCESS,NORMAL,NONE,REQUEST_INFORMATION
-23,Someone changed my account email address,ACCOUNT_ACCESS,CRITICAL,ACCOUNT_TAKEOVER,SECURITY_FREEZE
-24,I am locked out after too many sign-in attempts,ACCOUNT_ACCESS,NORMAL,NONE,AUTO_REPLY
-25,My two factor authentication code does not work,ACCOUNT_ACCESS,HIGH,ACCOUNT_TAKEOVER,HUMAN_ESCALATION
-26,Please add my colleague to the workspace,ACCOUNT_ACCESS,LOW,NONE,AUTO_REPLY
-27,I can see a project that should be private,ACCOUNT_ACCESS,HIGH,SAFETY_PRIVACY,HUMAN_ESCALATION
+19,A recent update broke our reporting workflow and blocks today's month-end close,TECHNICAL_SUPPORT,CRITICAL,NONE,PRIORITY_QUEUE
+20,"After I switch workspaces, the search page still shows results from my old account",TECHNICAL_SUPPORT,NORMAL,NONE,REQUEST_INFORMATION
+21,I forgot my password,ACCOUNT_ACCESS,NORMAL,NONE,AUTO_REPLY
+22,"The verification email never arrives, so I cannot access my account",ACCOUNT_ACCESS,HIGH,NONE,REQUEST_INFORMATION
+23,Someone changed my account email address and an unknown session is still active,FRAUD_SECURITY,CRITICAL,ACCOUNT_TAKEOVER,SECURITY_FREEZE
+24,I entered my own password incorrectly too many times and am locked out of my account,ACCOUNT_ACCESS,HIGH,NONE,AUTO_REPLY
+25,My two factor authentication code does not work and I cannot access my account,ACCOUNT_ACCESS,HIGH,NONE,REQUEST_INFORMATION
+26,Please add my colleague to the workspace,ACCOUNT_ACCESS,NORMAL,NONE,REQUEST_INFORMATION
+27,"I can see a private project that I was not authorized to access, but no account appears compromised",FRAUD_SECURITY,HIGH,SAFETY_PRIVACY,HUMAN_ESCALATION
 28,How do I change my profile name?,ACCOUNT_ACCESS,LOW,NONE,AUTO_REPLY
-29,My former employee still has access,ACCOUNT_ACCESS,HIGH,ACCOUNT_TAKEOVER,SECURITY_FREEZE
+29,A former employee who left today still has workspace access; please remove it,ACCOUNT_ACCESS,HIGH,NONE,HUMAN_ESCALATION
 30,I cannot accept the invitation to my team,ACCOUNT_ACCESS,NORMAL,NONE,REQUEST_INFORMATION
-31,I do not recognize this login location,FRAUD_SECURITY,CRITICAL,ACCOUNT_TAKEOVER,SECURITY_FREEZE
-32,My card details may have been stolen,FRAUD_SECURITY,CRITICAL,PAYMENT_DISPUTE,SECURITY_FREEZE
-33,Is this email from your company legitimate?,FRAUD_SECURITY,NORMAL,NONE,REQUEST_INFORMATION
+31,An unknown device is currently signed in to my account,FRAUD_SECURITY,CRITICAL,ACCOUNT_TAKEOVER,SECURITY_FREEZE
+32,I see a card charge that I did not make and more charges are appearing now,FRAUD_SECURITY,CRITICAL,PAYMENT_DISPUTE,SECURITY_FREEZE
+33,Can you confirm whether support@example.com is one of your official addresses?,FRAUD_SECURITY,LOW,NONE,AUTO_REPLY
 34,A stranger is using my subscription,FRAUD_SECURITY,CRITICAL,ACCOUNT_TAKEOVER,SECURITY_FREEZE
-35,I clicked a suspicious link in a message,FRAUD_SECURITY,HIGH,ACCOUNT_TAKEOVER,HUMAN_ESCALATION
+35,I clicked a suspicious link and entered my password,FRAUD_SECURITY,CRITICAL,ACCOUNT_TAKEOVER,SECURITY_FREEZE
 36,Please delete my personal data,FRAUD_SECURITY,HIGH,SAFETY_PRIVACY,HUMAN_ESCALATION
-37,I received a password reset I did not request,FRAUD_SECURITY,HIGH,ACCOUNT_TAKEOVER,SECURITY_FREEZE
-38,What information do you store about me?,FRAUD_SECURITY,NORMAL,SAFETY_PRIVACY,AUTO_REPLY
+37,Someone reset my password and is currently active in my account; I can no longer sign in,FRAUD_SECURITY,CRITICAL,ACCOUNT_TAKEOVER,SECURITY_FREEZE
+38,What information do you store about me?,FRAUD_SECURITY,LOW,NONE,AUTO_REPLY
 39,I think my account was compromised,FRAUD_SECURITY,CRITICAL,ACCOUNT_TAKEOVER,SECURITY_FREEZE
-40,Report a phishing message that used your brand,FRAUD_SECURITY,HIGH,NONE,HUMAN_ESCALATION
+40,Please report a phishing message impersonating your brand; I did not interact with it,FRAUD_SECURITY,HIGH,NONE,HUMAN_ESCALATION
 41,I want to cancel at the end of this month,CANCELLATION_RETENTION,NORMAL,NONE,AUTO_REPLY
-42,Please cancel now and refund the unused time,CANCELLATION_RETENTION,HIGH,PAYMENT_DISPUTE,HUMAN_ESCALATION
+42,Please cancel now and refund the unused time before today's renewal charge,CANCELLATION_RETENTION,HIGH,NONE,HUMAN_ESCALATION
 43,How do I downgrade to the free plan?,CANCELLATION_RETENTION,LOW,NONE,AUTO_REPLY
-44,Your price increase is unacceptable and I am leaving,CANCELLATION_RETENTION,HIGH,NONE,HUMAN_ESCALATION
-45,Can I pause my subscription for two months?,CANCELLATION_RETENTION,LOW,NONE,AUTO_REPLY
-46,I cancelled but I am still being billed,CANCELLATION_RETENTION,HIGH,PAYMENT_DISPUTE,HUMAN_ESCALATION
-47,What happens to my data if I cancel?,CANCELLATION_RETENTION,NORMAL,SAFETY_PRIVACY,AUTO_REPLY
-48,I want to close my company account,CANCELLATION_RETENTION,NORMAL,NONE,REQUEST_INFORMATION
-49,Please stop the renewal before tomorrow,CANCELLATION_RETENTION,HIGH,NONE,PRIORITY_QUEUE
+44,Your price increase is unacceptable and I am leaving,CANCELLATION_RETENTION,NORMAL,NONE,HUMAN_ESCALATION
+45,Can I pause my subscription for two months?,CANCELLATION_RETENTION,NORMAL,NONE,AUTO_REPLY
+46,I cancelled my subscription last month but was charged again today,BILLING,HIGH,PAYMENT_DISPUTE,HUMAN_ESCALATION
+47,What happens to my data if I cancel?,CANCELLATION_RETENTION,LOW,NONE,AUTO_REPLY
+48,What information do you need to close my company account?,CANCELLATION_RETENTION,NORMAL,NONE,REQUEST_INFORMATION
+49,I cannot stop the renewal through self-service and the charge happens tomorrow,CANCELLATION_RETENTION,HIGH,NONE,HUMAN_ESCALATION
 50,I am unhappy but willing to discuss alternatives,CANCELLATION_RETENTION,NORMAL,NONE,HUMAN_ESCALATION

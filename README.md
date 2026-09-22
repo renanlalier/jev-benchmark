@@ -155,7 +155,13 @@ The repository ships with a 100-case assistant-classification dataset. A larger 
 5. Published results record model IDs, date, dataset version, repetitions, and pricing assumptions.
 6. Confidence is compared only when semantically meaningful; synthetic LLM confidence is not treated as equivalent to provider-native probabilities.
 
-Run customer-support triage with `jev-bench run --task customer-support`. See [`docs/methodology.md`](docs/methodology.md).
+Run customer-support triage with `jev-bench run --task customer-support`.
+
+## Documentation
+
+- [Benchmark methodology](docs/methodology/benchmark.md)
+- [Assistant classification](docs/use-cases/assistant-classification.md)
+- [Customer support triage](docs/use-cases/customer-support-triage.md)
 
 ## Project status
 

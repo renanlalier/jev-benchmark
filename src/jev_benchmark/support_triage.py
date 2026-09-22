@@ -14,6 +14,7 @@ from typing import Any
 import httpx
 
 from jev_benchmark.providers.openai_provider import _extract_output_text
+from jev_benchmark.task_policies import SUPPORT_TRIAGE_CRITERIA, support_triage_prompt
 
 
 @dataclass(frozen=True)
@@ -84,10 +85,7 @@ def load_support_cases(path: str | Path) -> list[SupportCase]:
 
 
 def _prompt() -> str:
-    labels = "\n".join(f"{key}: {', '.join(values)}" for key, values in FIELDS.items())
-    return f"""Classify this customer-support message. Return JSON only with route, urgency, risk, and action.
-{labels}
-Do not explain."""
+    return support_triage_prompt()
 
 
 async def _openai(case: SupportCase) -> SupportResult:
@@ -128,12 +126,39 @@ async def _openai(case: SupportCase) -> SupportResult:
     )
 
 
+ANTHROPIC_TOOL_NAME = "classify_customer_support"
+
+
+def _anthropic_tool_input(data: dict[str, Any]) -> dict[str, Any]:
+    for block in data.get("content", []):
+        if block.get("type") == "tool_use" and block.get("name") == ANTHROPIC_TOOL_NAME:
+            values = block.get("input")
+            if isinstance(values, dict):
+                return values
+    raise ValueError("Anthropic response did not contain the triage tool input")
+
+
 async def _anthropic(case: SupportCase) -> SupportResult:
     payload = {
         "model": "claude-haiku-4-5-20251001",
         "max_tokens": 160,
         "system": _prompt(),
         "messages": [{"role": "user", "content": case.text}],
+        "tools": [
+            {
+                "name": ANTHROPIC_TOOL_NAME,
+                "description": "Return the customer-support triage labels.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        name: {"type": "string", "enum": labels} for name, labels in FIELDS.items()
+                    },
+                    "required": list(FIELDS),
+                    "additionalProperties": False,
+                },
+            }
+        ],
+        "tool_choice": {"type": "tool", "name": ANTHROPIC_TOOL_NAME},
     }
     started = time.perf_counter()
     async with httpx.AsyncClient(timeout=60) as client:
@@ -147,13 +172,10 @@ async def _anthropic(case: SupportCase) -> SupportResult:
         )
     response.raise_for_status()
     data: dict[str, Any] = response.json()
-    text = "".join(
-        part.get("text", "") for part in data.get("content", []) if part.get("type") == "text"
-    )
     return SupportResult(
         "anthropic",
         str(payload["model"]),
-        _validated(json.loads(text.strip().removeprefix("```json").removesuffix("```").strip())),
+        _validated(_anthropic_tool_input(data)),
         (time.perf_counter() - started) * 1000,
     )
 
@@ -163,7 +185,7 @@ async def _jev(case: SupportCase) -> SupportResult:
         name: {
             "type": "choice",
             "instructions": f"Classify the support {name}.",
-            "criteria": {label: label.replace("_", " ").lower() for label in labels},
+            "criteria": SUPPORT_TRIAGE_CRITERIA[name],
         }
         for name, labels in FIELDS.items()
     }
