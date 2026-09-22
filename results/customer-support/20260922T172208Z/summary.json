@@ -1,0 +1,50 @@
+{
+  "jev": {
+    "provider": "jev",
+    "model": "jev-latest",
+    "samples": 50,
+    "successful_samples": 50,
+    "failure_count": 0,
+    "failure_rate": 0.0,
+    "route_accuracy": 0.98,
+    "urgency_accuracy": 0.76,
+    "risk_accuracy": 0.84,
+    "action_accuracy": 0.82,
+    "overall_exact_match": 0.48,
+    "latency_ms_mean": 854.7961967607262,
+    "latency_ms_p50": 739.8259179972229,
+    "latency_ms_p95": 899.9545194958044
+  },
+  "anthropic": {
+    "provider": "anthropic",
+    "model": "claude-haiku-4-5-20251001",
+    "samples": 50,
+    "successful_samples": 50,
+    "failure_count": 0,
+    "failure_rate": 0.0,
+    "route_accuracy": 0.92,
+    "urgency_accuracy": 0.94,
+    "risk_accuracy": 0.94,
+    "action_accuracy": 0.94,
+    "overall_exact_match": 0.76,
+    "latency_ms_mean": 1219.885266618221,
+    "latency_ms_p50": 1129.9685504927766,
+    "latency_ms_p95": 1425.3368595942445
+  },
+  "openai": {
+    "provider": "openai",
+    "model": "gpt-5.6-luna",
+    "samples": 50,
+    "successful_samples": 50,
+    "failure_count": 0,
+    "failure_rate": 0.0,
+    "route_accuracy": 0.98,
+    "urgency_accuracy": 0.8,
+    "risk_accuracy": 0.96,
+    "action_accuracy": 0.9,
+    "overall_exact_match": 0.76,
+    "latency_ms_mean": 1846.7003113401006,
+    "latency_ms_p50": 1645.3552105012932,
+    "latency_ms_p95": 2714.165936155041
+  }
+}

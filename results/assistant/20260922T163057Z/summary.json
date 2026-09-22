@@ -1,0 +1,53 @@
+{
+  "jev": {
+    "provider": "jev",
+    "model": "jev-latest",
+    "samples": 100,
+    "successful_samples": 100,
+    "failure_count": 0,
+    "failure_rate": 0.0,
+    "intent_accuracy": 1.0,
+    "sentiment_accuracy": 0.98,
+    "escalation_accuracy": 0.99,
+    "overall_exact_match": 0.97,
+    "latency_ms_mean": 897.6736271008849,
+    "latency_ms_p50": 780.4691804994945,
+    "latency_ms_p95": 968.0292809389357,
+    "mean_run_consistency": 1.0,
+    "estimated_total_cost_usd": 0.007070322
+  },
+  "anthropic": {
+    "provider": "anthropic",
+    "model": "claude-haiku-4-5-20251001",
+    "samples": 100,
+    "successful_samples": 100,
+    "failure_count": 0,
+    "failure_rate": 0.0,
+    "intent_accuracy": 0.98,
+    "sentiment_accuracy": 0.96,
+    "escalation_accuracy": 0.98,
+    "overall_exact_match": 0.92,
+    "latency_ms_mean": 948.2506168090913,
+    "latency_ms_p50": 882.8491980020772,
+    "latency_ms_p95": 1239.53725710744,
+    "mean_run_consistency": 1.0,
+    "estimated_total_cost_usd": 0.069531
+  },
+  "openai": {
+    "provider": "openai",
+    "model": "gpt-5.6-luna",
+    "samples": 100,
+    "successful_samples": 100,
+    "failure_count": 0,
+    "failure_rate": 0.0,
+    "intent_accuracy": 0.98,
+    "sentiment_accuracy": 0.99,
+    "escalation_accuracy": 0.98,
+    "overall_exact_match": 0.95,
+    "latency_ms_mean": 2083.0502170702675,
+    "latency_ms_p50": 1712.1476129977964,
+    "latency_ms_p95": 3775.642396300826,
+    "mean_run_consistency": 1.0,
+    "estimated_total_cost_usd": 0.013247
+  }
+}

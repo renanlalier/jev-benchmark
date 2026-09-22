@@ -1,0 +1,14 @@
+{
+  "run_id": "20260922T163057Z",
+  "timestamp_utc": "2026-09-22T16:34:25.873433+00:00",
+  "task": "assistant",
+  "dataset": "datasets/assistant_classification.csv",
+  "dataset_sha256": "4ccb62d0f238cc8e8e46361e491dfb66a7eef86e1c2ca3f78ac947ca832cd5ab",
+  "providers": [
+    "jev",
+    "anthropic",
+    "openai"
+  ],
+  "repetitions": 1,
+  "git_commit": "0eaac256d9b88bfd02a77e9ed97ad4625f2c54fd"
+}
