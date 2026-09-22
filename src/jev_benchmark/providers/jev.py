@@ -62,6 +62,10 @@ class JevProvider(BenchmarkProvider):
         response.raise_for_status()
         data = response.json()
 
+        usage = data.get("usage", {})
+        input_tokens = usage.get("input_tokens") or usage.get("input")
+        output_tokens = usage.get("output_tokens") or usage.get("output")
+
         # Jev is early access and gateways may expose slightly different envelopes.
         # Keep extraction isolated here so the benchmark core remains stable.
         answers = data.get("answers", data.get("result", data))
@@ -88,7 +92,10 @@ class JevProvider(BenchmarkProvider):
                 sentiment_confidence=_confidence(sentiment),
                 escalation_confidence=float(escalation_prob),
             ),
-            latency_ms=latency_ms,\n            input_tokens=input_tokens,\n            output_tokens=output_tokens,\n            estimated_cost_usd=estimate_cost_usd(
+            latency_ms=latency_ms,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            estimated_cost_usd=estimate_cost_usd(
                 self.name, self.model, input_tokens, output_tokens
             ),
             raw_output=data,
