@@ -3,17 +3,16 @@ from __future__ import annotations
 import json
 import os
 import time
+from typing import Any
 
 import httpx
 
 from jev_benchmark.models import BenchmarkCase, Prediction, ProviderResult
 from jev_benchmark.pricing import estimate_cost_usd
 from jev_benchmark.providers.base import BenchmarkProvider
+from jev_benchmark.task_policies import assistant_system_prompt
 
-SYSTEM_PROMPT = """You are a strict classifier. Return JSON only with keys: intent, sentiment, escalation.
-Intent must be one of FINANCIAL_TRANSACTION, SHOPPING_LIST, REMINDER, CALENDAR, WEATHER, GENERAL_CHAT, OTHER.
-Sentiment must be one of SATISFIED, NEUTRAL, CONFUSED, FRUSTRATED, ANGRY.
-Escalation must be true or false. Do not explain."""
+SYSTEM_PROMPT = assistant_system_prompt()
 
 
 class AnthropicProvider(BenchmarkProvider):
@@ -48,7 +47,7 @@ class AnthropicProvider(BenchmarkProvider):
         text = "".join(
             part.get("text", "") for part in data.get("content", []) if part.get("type") == "text"
         ).strip()
-        parsed = json.loads(_strip_code_fence(text))
+        parsed = _parse_json_object(_strip_code_fence(text))
         usage = data.get("usage", {})
 
         return ProviderResult(
@@ -74,3 +73,10 @@ def _strip_code_fence(text: str) -> str:
             lines = lines[:-1]
         return "\n".join(lines)
     return text
+
+
+def _parse_json_object(text: str) -> dict[str, Any]:
+    value, _ = json.JSONDecoder().raw_decode(text.lstrip())
+    if not isinstance(value, dict):
+        raise TypeError("Anthropic response did not contain a JSON object")
+    return value

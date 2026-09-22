@@ -9,6 +9,8 @@ import statistics
 from collections import Counter, defaultdict
 from pathlib import Path
 
+import httpx
+
 from jev_benchmark.models import BenchmarkCase, Intent, ProviderResult, Sentiment
 from jev_benchmark.providers.base import BenchmarkProvider
 
@@ -19,13 +21,16 @@ def load_cases(path: str | Path) -> list[BenchmarkCase]:
     rows: list[BenchmarkCase] = []
     with Path(path).open(newline="", encoding="utf-8") as handle:
         for row in csv.DictReader(handle):
+            escalation = row["expected_escalation"].strip().lower()
+            if escalation not in {"true", "false"}:
+                raise ValueError(f"Case {row['id']} has invalid expected_escalation: {escalation}")
             rows.append(
                 BenchmarkCase(
                     id=row["id"],
                     text=row["text"],
                     expected_intent=Intent(row["expected_intent"]),
                     expected_sentiment=Sentiment(row["expected_sentiment"]),
-                    expected_escalation=row["expected_escalation"].strip().lower() == "true",
+                    expected_escalation=escalation == "true",
                 )
             )
     LOGGER.info("Loaded %d case(s) from %s", len(rows), path)
@@ -42,7 +47,17 @@ async def run_provider(
     LOGGER.info("[%s] Starting %d classification(s)", provider.name, total)
     for _ in range(repetitions):
         for case in cases:
-            result = await provider.classify(case)
+            started = asyncio.get_running_loop().time()
+            try:
+                result = await provider.classify(case)
+            except (httpx.HTTPError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
+                result = ProviderResult(
+                    provider=provider.name,
+                    model=provider.model,
+                    latency_ms=(asyncio.get_running_loop().time() - started) * 1000,
+                    error=f"{type(exc).__name__}: {exc}",
+                )
+                LOGGER.warning("[%s] Case %s failed: %s", provider.name, case.id, result.error)
             output.append((case, result))
     LOGGER.info("[%s] Completed %d classification(s)", provider.name, len(output))
     return output
@@ -64,21 +79,31 @@ def summarize(records: list[tuple[BenchmarkCase, ProviderResult]]) -> dict[str, 
     if not records:
         return {}
 
+    successful = [(case, result) for case, result in records if result.prediction is not None]
+    if not successful:
+        return {
+            "provider": records[0][1].provider,
+            "model": records[0][1].model,
+            "samples": len(records),
+            "failure_count": len(records),
+            "failure_rate": 1.0,
+        }
     intent_hits = 0
     sentiment_hits = 0
     escalation_hits = 0
     latencies: list[float] = []
     predictions_by_case: dict[str, list[str]] = defaultdict(list)
 
-    for case, result in records:
+    for case, result in successful:
         p = result.prediction
+        assert p is not None
         intent_hits += int(p.intent == case.expected_intent)
         sentiment_hits += int(p.sentiment == case.expected_sentiment)
         escalation_hits += int(p.escalation == case.expected_escalation)
         latencies.append(result.latency_ms)
         predictions_by_case[case.id].append(f"{p.intent}|{p.sentiment}|{str(p.escalation).lower()}")
 
-    n = len(records)
+    n = len(successful)
     consistency_scores = []
     for values in predictions_by_case.values():
         counts = Counter(values)
@@ -89,14 +114,18 @@ def summarize(records: list[tuple[BenchmarkCase, ProviderResult]]) -> dict[str, 
     return {
         "provider": records[0][1].provider,
         "model": records[0][1].model,
-        "samples": n,
+        "samples": len(records),
+        "successful_samples": n,
+        "failure_count": len(records) - n,
+        "failure_rate": (len(records) - n) / len(records),
         "intent_accuracy": intent_hits / n,
         "sentiment_accuracy": sentiment_hits / n,
         "escalation_accuracy": escalation_hits / n,
         "overall_exact_match": sum(
             1
-            for case, r in records
-            if r.prediction.intent == case.expected_intent
+            for case, r in successful
+            if r.prediction is not None
+            and r.prediction.intent == case.expected_intent
             and r.prediction.sentiment == case.expected_sentiment
             and r.prediction.escalation == case.expected_escalation
         )
@@ -149,6 +178,7 @@ def write_results(
         "input_tokens",
         "output_tokens",
         "estimated_cost_usd",
+        "error",
     ]
     with prediction_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
@@ -165,16 +195,21 @@ def write_results(
                         "expected_intent": case.expected_intent.value,
                         "expected_sentiment": case.expected_sentiment.value,
                         "expected_escalation": case.expected_escalation,
-                        "predicted_intent": prediction.intent.value,
-                        "predicted_sentiment": prediction.sentiment.value,
-                        "predicted_escalation": prediction.escalation,
-                        "intent_confidence": prediction.intent_confidence,
-                        "sentiment_confidence": prediction.sentiment_confidence,
-                        "escalation_confidence": prediction.escalation_confidence,
+                        "predicted_intent": prediction.intent.value if prediction else None,
+                        "predicted_sentiment": prediction.sentiment.value if prediction else None,
+                        "predicted_escalation": prediction.escalation if prediction else None,
+                        "intent_confidence": prediction.intent_confidence if prediction else None,
+                        "sentiment_confidence": prediction.sentiment_confidence
+                        if prediction
+                        else None,
+                        "escalation_confidence": prediction.escalation_confidence
+                        if prediction
+                        else None,
                         "latency_ms": result.latency_ms,
                         "input_tokens": result.input_tokens,
                         "output_tokens": result.output_tokens,
                         "estimated_cost_usd": result.estimated_cost_usd,
+                        "error": result.error,
                     }
                 )
     LOGGER.info("Predictions written: %s", prediction_path)

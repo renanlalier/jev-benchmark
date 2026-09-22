@@ -66,7 +66,7 @@ Provider-specific optimizations must be documented. Hidden few-shot examples or 
 
 ## Dataset governance
 
-The repository starts with a tiny `datasets/smoke.csv` file only to validate the harness. It is **not** suitable for leaderboard claims.
+The repository includes `datasets/assistant_classification.csv`, a 100-case synthetic starter dataset. It is **not** suitable for leaderboard claims.
 
 A publishable dataset should include:
 

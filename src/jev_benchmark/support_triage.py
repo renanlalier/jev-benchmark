@@ -30,8 +30,9 @@ class SupportCase:
 class SupportResult:
     provider: str
     model: str
-    values: dict[str, str]
+    values: dict[str, str] | None
     latency_ms: float
+    error: str | None = None
 
 
 LOGGER = logging.getLogger(__name__)
@@ -58,7 +59,7 @@ FIELDS = {
 
 def load_support_cases(path: str | Path) -> list[SupportCase]:
     with Path(path).open(newline="", encoding="utf-8") as handle:
-        return [
+        cases = [
             SupportCase(
                 id=row["id"],
                 text=row["text"],
@@ -69,6 +70,17 @@ def load_support_cases(path: str | Path) -> list[SupportCase]:
             )
             for row in csv.DictReader(handle)
         ]
+    for case in cases:
+        values = {
+            "route": case.route,
+            "urgency": case.urgency,
+            "risk": case.risk,
+            "action": case.action,
+        }
+        invalid = [name for name, labels in FIELDS.items() if values[name] not in labels]
+        if invalid:
+            raise ValueError(f"Case {case.id} has invalid labels: {', '.join(invalid)}")
+    return cases
 
 
 def _prompt() -> str:
@@ -82,7 +94,21 @@ async def _openai(case: SupportCase) -> SupportResult:
     payload = {
         "model": "gpt-5.6-luna",
         "input": [{"role": "system", "content": _prompt()}, {"role": "user", "content": case.text}],
-        "text": {"format": {"type": "json_object"}},
+        "text": {
+            "format": {
+                "type": "json_schema",
+                "name": "customer_support_triage",
+                "strict": True,
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        name: {"type": "string", "enum": labels} for name, labels in FIELDS.items()
+                    },
+                    "required": list(FIELDS),
+                    "additionalProperties": False,
+                },
+            }
+        },
     }
     started = time.perf_counter()
     async with httpx.AsyncClient(timeout=60) as client:
@@ -173,9 +199,26 @@ async def run_support_triage(
 
     async def run_one(provider: str) -> tuple[str, list[tuple[SupportCase, SupportResult]]]:
         LOGGER.info("[%s] Starting %d triage decision(s)", provider, len(cases) * repetitions)
-        records = [
-            (case, await functions[provider](case)) for _ in range(repetitions) for case in cases
-        ]
+        records: list[tuple[SupportCase, SupportResult]] = []
+        for _ in range(repetitions):
+            for case in cases:
+                started = asyncio.get_running_loop().time()
+                try:
+                    result = await functions[provider](case)
+                except (httpx.HTTPError, ValueError, TypeError, KeyError) as exc:
+                    result = SupportResult(
+                        provider,
+                        {
+                            "jev": "jev-latest",
+                            "anthropic": "claude-haiku-4-5-20251001",
+                            "openai": "gpt-5.6-luna",
+                        }[provider],
+                        None,
+                        (asyncio.get_running_loop().time() - started) * 1000,
+                        f"{type(exc).__name__}: {exc}",
+                    )
+                    LOGGER.warning("[%s] Case %s failed: %s", provider, case.id, result.error)
+                records.append((case, result))
         LOGGER.info("[%s] Completed %d triage decision(s)", provider, len(records))
         return provider, records
 
@@ -185,28 +228,55 @@ async def run_support_triage(
 def summarize_support(records: list[tuple[SupportCase, SupportResult]]) -> dict[str, object]:
     if not records:
         return {}
+    successful = [(case, result) for case, result in records if result.values is not None]
+    failures = len(records) - len(successful)
+    base: dict[str, object] = {
+        "provider": records[0][1].provider,
+        "model": records[0][1].model,
+        "samples": len(records),
+        "successful_samples": len(successful),
+        "failure_count": failures,
+        "failure_rate": failures / len(records),
+    }
+    if not successful:
+        return base
     expected = {"route": "route", "urgency": "urgency", "risk": "risk", "action": "action"}
-    total = len(records)
+    total = len(successful)
     accuracy = {
-        name: sum(result.values[name] == getattr(case, attribute) for case, result in records)
+        name: sum(
+            result.values is not None and result.values[name] == getattr(case, attribute)
+            for case, result in successful
+        )
         / total
         for name, attribute in expected.items()
     }
-    return {
-        "provider": records[0][1].provider,
-        "model": records[0][1].model,
-        "samples": total,
-        **{f"{name}_accuracy": score for name, score in accuracy.items()},
-        "overall_exact_match": sum(
-            all(
-                result.values[name] == getattr(case, attribute)
-                for name, attribute in expected.items()
+    latencies = [result.latency_ms for _, result in successful]
+    base.update(
+        {
+            **{f"{name}_accuracy": score for name, score in accuracy.items()},
+            "overall_exact_match": sum(
+                all(
+                    result.values is not None and result.values[name] == getattr(case, attribute)
+                    for name, attribute in expected.items()
+                )
+                for case, result in successful
             )
-            for case, result in records
-        )
-        / total,
-        "latency_ms_mean": statistics.mean(result.latency_ms for _, result in records),
-    }
+            / total,
+            "latency_ms_mean": statistics.mean(latencies),
+            "latency_ms_p50": _percentile(latencies, 0.5),
+            "latency_ms_p95": _percentile(latencies, 0.95),
+        }
+    )
+    return base
+
+
+def _percentile(values: list[float], q: float) -> float:
+    ordered = sorted(values)
+    if len(ordered) == 1:
+        return ordered[0]
+    index = (len(ordered) - 1) * q
+    lower, upper = int(index), min(int(index) + 1, len(ordered) - 1)
+    return ordered[lower] + (ordered[upper] - ordered[lower]) * (index - lower)
 
 
 def write_support_results(
@@ -229,6 +299,7 @@ def write_support_results(
         "predicted_risk",
         "predicted_action",
         "latency_ms",
+        "error",
     ]
     with prediction_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
@@ -245,11 +316,14 @@ def write_support_results(
                         "expected_urgency": case.urgency,
                         "expected_risk": case.risk,
                         "expected_action": case.action,
-                        "predicted_route": result.values["route"],
-                        "predicted_urgency": result.values["urgency"],
-                        "predicted_risk": result.values["risk"],
-                        "predicted_action": result.values["action"],
+                        "predicted_route": result.values.get("route") if result.values else None,
+                        "predicted_urgency": result.values.get("urgency")
+                        if result.values
+                        else None,
+                        "predicted_risk": result.values.get("risk") if result.values else None,
+                        "predicted_action": result.values.get("action") if result.values else None,
                         "latency_ms": result.latency_ms,
+                        "error": result.error,
                     }
                 )
     LOGGER.info("Predictions written: %s", prediction_path)

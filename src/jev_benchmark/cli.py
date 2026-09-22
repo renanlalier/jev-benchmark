@@ -7,6 +7,7 @@ from pathlib import Path
 import typer
 from dotenv import load_dotenv
 
+from jev_benchmark.artifacts import create_run_directory, write_metadata
 from jev_benchmark.providers.anthropic_provider import AnthropicProvider
 from jev_benchmark.providers.jev import JevProvider
 from jev_benchmark.providers.openai_provider import OpenAIProvider
@@ -34,7 +35,7 @@ def run(
         "-p",
         help="Provider to benchmark; repeat this option to select multiple providers.",
     ),
-    dataset: Path = typer.Option(Path("datasets/smoke.csv"), "--dataset"),
+    dataset: Path = typer.Option(Path("datasets/assistant_classification.csv"), "--dataset"),
     task: str = typer.Option(
         "assistant", "--task", help="Benchmark task: assistant or customer-support."
     ),
@@ -62,7 +63,7 @@ def run(
     if task not in {"assistant", "customer-support"}:
         raise typer.BadParameter("Task must be assistant or customer-support")
 
-    resolved_output_dir = output_dir or Path("results") / task / "latest"
+    resolved_output_dir, run_id = create_run_directory(task, output_dir)
 
     selected_names = providers or list(provider_map)
     unknown = [name for name in selected_names if name not in provider_map]
@@ -72,7 +73,7 @@ def run(
     if task == "customer-support":
         support_dataset = (
             dataset
-            if dataset != Path("datasets/smoke.csv")
+            if dataset != Path("datasets/assistant_classification.csv")
             else Path("datasets/customer_support_triage.csv")
         )
         LOGGER.info("Loading customer-support dataset: %s", support_dataset)
@@ -87,7 +88,15 @@ def run(
             run_support_triage(selected_names, support_cases, repetitions)
         )
         summary_path = write_support_results(support_results, resolved_output_dir)
-        LOGGER.info("Summary written: %s", summary_path)
+        metadata_path = write_metadata(
+            resolved_output_dir,
+            task=task,
+            dataset=support_dataset,
+            providers=selected_names,
+            repetitions=repetitions,
+            run_id=run_id,
+        )
+        LOGGER.info("Results written: %s; metadata: %s", summary_path, metadata_path)
         typer.echo(f"Customer-support benchmark complete. Summary: {summary_path}")
         return
 
@@ -103,7 +112,15 @@ def run(
     results = asyncio.run(run_all(selected, cases, repetitions))
     LOGGER.info("Calculating metrics and writing results to: %s", resolved_output_dir)
     summary_path = write_results(results, resolved_output_dir)
-    LOGGER.info("Summary written: %s", summary_path)
+    metadata_path = write_metadata(
+        resolved_output_dir,
+        task=task,
+        dataset=dataset,
+        providers=selected_names,
+        repetitions=repetitions,
+        run_id=run_id,
+    )
+    LOGGER.info("Results written: %s; metadata: %s", summary_path, metadata_path)
     typer.echo(f"Benchmark complete. Summary: {summary_path}")
 
 

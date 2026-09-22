@@ -8,6 +8,7 @@ import httpx
 from jev_benchmark.models import BenchmarkCase, Intent, Prediction, ProviderResult, Sentiment
 from jev_benchmark.pricing import estimate_cost_usd
 from jev_benchmark.providers.base import BenchmarkProvider
+from jev_benchmark.task_policies import ASSISTANT_CLASSIFICATION_POLICY
 
 
 class JevProvider(BenchmarkProvider):
@@ -23,7 +24,8 @@ class JevProvider(BenchmarkProvider):
             "questions": {
                 "intent": {
                     "type": "choice",
-                    "instructions": "Classify the user intent.",
+                    "instructions": "Classify the user intent using the benchmark policy: "
+                    + ASSISTANT_CLASSIFICATION_POLICY,
                     "criteria": {
                         "FINANCIAL_TRANSACTION": "A financial transaction or payment.",
                         "SHOPPING_LIST": "An item to add to a shopping list.",
@@ -36,7 +38,8 @@ class JevProvider(BenchmarkProvider):
                 },
                 "sentiment": {
                     "type": "choice",
-                    "instructions": "Classify the user sentiment.",
+                    "instructions": "Classify the user sentiment using the benchmark policy: "
+                    + ASSISTANT_CLASSIFICATION_POLICY,
                     "criteria": {
                         "SATISFIED": "Positive or satisfied.",
                         "NEUTRAL": "Neutral or factual.",
@@ -47,7 +50,8 @@ class JevProvider(BenchmarkProvider):
                 },
                 "escalation": {
                     "type": "noul",
-                    "instructions": "Does this message require escalation to a human?",
+                    "instructions": "Decide escalation using this benchmark policy: "
+                    + ASSISTANT_CLASSIFICATION_POLICY,
                 },
             },
         }

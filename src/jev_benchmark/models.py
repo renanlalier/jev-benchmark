@@ -43,8 +43,9 @@ class Prediction(BaseModel):
 class ProviderResult(BaseModel):
     provider: str
     model: str
-    prediction: Prediction
+    prediction: Prediction | None = None
     latency_ms: float
+    error: str | None = None
     input_tokens: int | None = None
     output_tokens: int | None = None
     estimated_cost_usd: float | None = None

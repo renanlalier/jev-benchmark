@@ -36,41 +36,30 @@ graph LR
     metrics --> performance["Latency and errors"]
     metrics --> economics["Cost metrics"]
     metrics --> consistency["Consistency metrics"]
-    quality --> report["Benchmark report"]
-    performance --> report
-    economics --> report
-    consistency --> report
+    quality --> artifacts["Result artifacts"]
+    performance --> artifacts
+    economics --> artifacts
+    consistency --> artifacts
 ```
 
 GitHub renders Mermaid directly in Markdown, so the architecture stays versioned as text and is visible without external images.
 
 ## Results
 
-Every benchmark run writes machine-readable results plus a Markdown report:
+Every benchmark run writes machine-readable results:
 
 ```text
 results/
 └── <task>/
-    └── latest/
+    └── <run-id>/
+        ├── metadata.json
         ├── predictions.csv
-        ├── summary.json
-        └── report.md
+        └── summary.json
 ```
 
-Open `report.md` directly on GitHub to inspect the benchmark without downloading a dashboard or running a notebook.
+`metadata.json` records the task, dataset hash, providers, repetition count, timestamp, and commit. `predictions.csv` contains one row per provider prediction. `summary.json` contains aggregate metrics for each provider.
 
-A report is designed to contain:
-
-- benchmark metadata and exact model IDs;
-- Accuracy and Macro F1;
-- latency p50 / p95;
-- estimated cost;
-- parse/error rate;
-- consistency across repeated runs;
-- confusion matrices rendered as Markdown tables;
-- links to raw predictions for reproducibility.
-
-For stable public releases, curated reports can be committed under `results/published/<version>/`. This keeps headline benchmark results reviewable and version-controlled while raw CI artifacts remain attached to workflow runs.
+For stable public releases, curated result files can be committed under `results/published/<version>/`. This keeps benchmark outputs reviewable and version-controlled while raw CI artifacts remain attached to workflow runs.
 
 ## Quick start
 
@@ -96,13 +85,19 @@ Add only the API keys for the providers you want to benchmark.
 jev-bench run
 ```
 
+Run customer-support triage:
+
+```bash
+jev-bench run --task customer-support
+```
+
 Run a single provider:
 
 ```bash
 jev-bench run --provider jev
 ```
 
-Measure run-to-run consistency:
+Measure run-to-run consistency (use only when the provider cache is disabled or documented):
 
 ```bash
 jev-bench run --repetitions 10
@@ -124,7 +119,7 @@ sequenceDiagram
     participant Adapter as Provider Adapter
     participant Model as Model
     participant Metrics as Metrics Engine
-    participant Report as Benchmark Report
+    participant Artifacts as Result Artifacts
 
     Runner->>Dataset: Load labeled cases
     loop Each case and repetition
@@ -135,7 +130,7 @@ sequenceDiagram
     end
     Runner->>Metrics: Predictions and ground truth
     Metrics-->>Runner: Benchmark metrics
-    Runner->>Report: Generate report files
+    Runner->>Artifacts: Write metadata JSON CSV and summary
 ```
 
 ## Dataset format
@@ -149,18 +144,18 @@ id,text,expected_intent,expected_sentiment,expected_escalation
 3,"This is the third time this failed",GENERAL_CHAT,FRUSTRATED,true
 ```
 
-The repository ships with a small smoke-test dataset. A larger benchmark dataset should use explicit annotation guidelines, independent review, and dataset versioning before headline comparisons are published.
+The repository ships with a 100-case assistant-classification dataset. A larger benchmark dataset should use explicit annotation guidelines, independent review, and dataset versioning before headline comparisons are published.
 
 ## Fairness principles
 
 1. Same taxonomy and dataset for every provider.
 2. Deterministic parsing into one normalized prediction contract.
 3. Provider-specific prompting is allowed only when required to express the same task correctly.
-4. Raw outputs and benchmark configuration are persisted for reproducibility.
+4. Dataset hashes and benchmark configuration are persisted for reproducibility.
 5. Published results record model IDs, date, dataset version, repetitions, and pricing assumptions.
 6. Confidence is compared only when semantically meaningful; synthetic LLM confidence is not treated as equivalent to provider-native probabilities.
 
-See [`docs/methodology.md`](docs/methodology.md).
+Run customer-support triage with `jev-bench run --task customer-support`. See [`docs/methodology.md`](docs/methodology.md).
 
 ## Project status
 

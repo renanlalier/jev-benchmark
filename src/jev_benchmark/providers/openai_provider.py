@@ -9,11 +9,9 @@ import httpx
 from jev_benchmark.models import BenchmarkCase, Prediction, ProviderResult
 from jev_benchmark.pricing import estimate_cost_usd
 from jev_benchmark.providers.base import BenchmarkProvider
+from jev_benchmark.task_policies import assistant_system_prompt
 
-SYSTEM_PROMPT = """You are a strict classifier. Return JSON only with keys: intent, sentiment, escalation.
-Intent must be one of FINANCIAL_TRANSACTION, SHOPPING_LIST, REMINDER, CALENDAR, WEATHER, GENERAL_CHAT, OTHER.
-Sentiment must be one of SATISFIED, NEUTRAL, CONFUSED, FRUSTRATED, ANGRY.
-Escalation must be true or false. Do not explain."""
+SYSTEM_PROMPT = assistant_system_prompt()
 
 
 class OpenAIProvider(BenchmarkProvider):
