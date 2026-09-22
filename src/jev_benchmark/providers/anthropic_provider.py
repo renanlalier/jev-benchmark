@@ -7,6 +7,7 @@ import httpx
 
 from jev_benchmark.models import BenchmarkCase, Prediction, ProviderResult
 from jev_benchmark.providers.base import BenchmarkProvider
+from jev_benchmark.pricing import estimate_cost_usd
 
 
 SYSTEM_PROMPT = """You are a strict classifier. Return JSON only with keys: intent, sentiment, escalation.
@@ -57,7 +58,7 @@ class AnthropicProvider(BenchmarkProvider):
             latency_ms=latency_ms,
             input_tokens=usage.get("input_tokens"),
             output_tokens=usage.get("output_tokens"),
-            estimated_cost_usd=None,
+            estimated_cost_usd=estimate_cost_usd(\n                self.name, self.model, usage.get("input_tokens"), usage.get("output_tokens")\n            ),
             raw_output=data,
         )
 
